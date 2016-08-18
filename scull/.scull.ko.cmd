@@ -1,1 +1,0 @@
-cmd_/home/radu/work/ldd3/scull/scull.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/radu/work/ldd3/scull/scull.ko /home/radu/work/ldd3/scull/scull.o /home/radu/work/ldd3/scull/scull.mod.o
