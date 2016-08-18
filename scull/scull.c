@@ -11,14 +11,27 @@ MODULE_LICENSE("GPL");
 #define SCULL_DEV_COUNT		4
 #define SCULL_DEV_FIRST_MINOR	0
 #define SCULL_DEV_NAME		"scull"
+#define SCULL_QUANTUM_SIZE	4000
+#define SCULL_QSET_SIZE		1000
 
 int scull_major_num = SCULL_MAJOR_NUM;
+int scull_quantum = SCULL_QUANTUM_SIZE;
+int scull_qset = SCULL_QSET_SIZE;
 
 module_param(scull_major_num, int, 0);
+module_param(scull_quantum, int, S_IRUGO);
+module_param(scull_qset, int, S_IRUGO);
+
+struct scull_qset {
+	struct scull_qset *next;
+	void **data;
+};
 
 struct scull_dev {
 	int minor_num;
 	struct cdev cdev;
+	int size;
+	struct scull_qset *data;
 };
 
 static struct scull_dev *scull_devices;
@@ -72,6 +85,8 @@ ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 
 	dev = filp->private_data;
 	printk("reading a file for device %s - %d, %d\n", SCULL_DEV_NAME, scull_major_num, dev->minor_num);
+
+	printk("writing %lu at position in file %lld\n", count, *f_pos);
 
 	return count;
 }
@@ -162,6 +177,8 @@ static int __init scull_init(void)
 
 	for (i = 0; i < SCULL_DEV_COUNT; i++) {
 		scull_devices[i].minor_num = SCULL_DEV_COUNT + i;
+		scull_devices[i].size = 0;
+		scull_devices[i].data = 0;
 		ret = scull_setup_cdev(&scull_devices[i], i);
 		if (ret)
 			goto fail;
