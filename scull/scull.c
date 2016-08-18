@@ -14,6 +14,8 @@ MODULE_LICENSE("GPL");
 
 int scull_major_num = SCULL_MAJOR_NUM;
 
+module_param(scull_major_num, int, 0);
+
 struct scull_dev {
 	int minor_num;
 	struct cdev cdev;
