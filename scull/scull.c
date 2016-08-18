@@ -31,13 +31,21 @@ int scull_open(struct inode *inode, struct file *filp)
 
 	dev = container_of(inode->i_cdev, struct scull_dev, cdev);
 	filp->private_data = dev;
+
+	printk("opened a file for device %s - %d, %d\n", SCULL_DEV_NAME, scull_major_num, dev->minor_num);
 	
 	return 0;
 }
 
 int scull_release(struct inode *inode, struct file *filp)
 {
+	struct scull_dev *dev;
+
 	printk("scull release for minor %d\n", iminor(inode));
+
+	dev = container_of(inode->i_cdev, struct scull_dev, cdev);
+
+	printk("releasing file for device: %s - %d, %d\n", SCULL_DEV_NAME, scull_major_num, dev->minor_num);
 
 	return 0;
 }
@@ -45,14 +53,26 @@ int scull_release(struct inode *inode, struct file *filp)
 ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
 		loff_t *f_pos)
 {
+	struct scull_dev *dev;
+
 	printk("scull read minor %d\n", iminor(filp->f_inode));
+
+	dev = filp->private_data;
+	printk("reading a file for device %s - %d, %d\n", SCULL_DEV_NAME, scull_major_num, dev->minor_num);
+
 	return count;
 }
 
 ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
 		loff_t *f_pos)
 {
+	struct scull_dev *dev;
+
 	printk("scull write minor %d\n", iminor(filp->f_inode));
+
+	dev = filp->private_data;
+	printk("reading a file for device %s - %d, %d\n", SCULL_DEV_NAME, scull_major_num, dev->minor_num);
+
 	return count;
 }
 
