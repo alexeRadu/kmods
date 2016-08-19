@@ -4,6 +4,7 @@
 #include <linux/cdev.h>
 #include <linux/slab.h>
 #include <linux/kernel.h>
+#include <asm/uaccess.h>
 
 MODULE_LICENSE("GPL");
 
@@ -13,6 +14,8 @@ MODULE_LICENSE("GPL");
 #define SCULL_DEV_NAME		"scull"
 #define SCULL_QUANTUM_SIZE	4000
 #define SCULL_QSET_SIZE		1000
+
+#define MIN(x, y)	((x < y) ? (x) : (y))
 
 int scull_major_num = SCULL_MAJOR_NUM;
 int scull_quantum = SCULL_QUANTUM_SIZE;
@@ -30,7 +33,7 @@ struct scull_qset {
 struct scull_dev {
 	int minor_num;
 	struct cdev cdev;
-	int size;
+	unsigned long size; 		/* size of the file */
 	struct scull_qset *data;
 };
 
@@ -66,14 +69,35 @@ int scull_release(struct inode *inode, struct file *filp)
 ssize_t scull_read(struct file *filp, char __user *buf, size_t count,
 		loff_t *f_pos)
 {
-	struct scull_dev *dev;
+	unsigned long idx;		/* used both as qset index and quantum index */
+	unsigned long qstart;		/* start position for the data to be copied from the quantum */
+	ssize_t retlen;
 
-	printk("scull read minor %d\n", iminor(filp->f_inode));
+	struct scull_dev *dev = filp->private_data;
+	struct scull_qset *qset = dev->data;
 
-	dev = filp->private_data;
-	printk("reading a file for device %s - %d, %d\n", SCULL_DEV_NAME, scull_major_num, dev->minor_num);
+	printk("reading from device %s - %d, %d\n", SCULL_DEV_NAME, scull_major_num, dev->minor_num);
 
-	return count;
+	/* exit if position exceed file length */
+	if (*f_pos >= dev->size)
+		return 0;
+
+	count = MIN(count, (dev->size - *f_pos));
+
+	/* go to the desired qset */
+	idx = *f_pos / (scull_quantum * scull_qset);
+	while (idx-- && qset->next)
+		qset = qset->next;
+
+	/* compute indexes for qset, quantum and first byte inside the quantum */
+	qidx = (*f_pos % (scull_quantum * scull_qset)) % scull_quantum;
+	qstart = *f_pos % scull_quantum;
+	count = MIN(scull_quantum - qstart, count);
+
+	retlen = copy_to_user(buf, qset->data[qidx] + qstart, count);
+	*f_pos += retlen;
+
+	return retlen;
 }
 
 ssize_t scull_write(struct file *filp, const char __user *buf, size_t count,
