@@ -33,16 +33,16 @@ static struct sbull_dev *devices;
 
 static int sbull_open(struct block_device *bdev, fmode_t mode)
 {
-	//struct sbull_dev *dev = bdev->bd_disk->private_data;
+	struct gendisk *gd = bdev->bd_disk;
 
-	printk("sbull open\n");
+	printk("%s open\n", gd->disk_name);
 
 	return 0;
 }
 
 static void sbull_release(struct gendisk *gd, fmode_t mode)
 {
-	printk("sbull release\n");
+	printk("%s release\n", gd->disk_name);
 }
 
 static int sbull_ioctl(struct block_device *bdev, fmode_t mode,
