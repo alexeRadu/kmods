@@ -62,11 +62,13 @@ static struct block_device_operations sbull_ops = {
 static void sbull_request(struct request_queue *q)
 {
 	struct request *req;
+	struct bio *bio;
+	struct bio_vec bvec;
+	struct req_iterator rq_iter;
 
 	printk ("processing requests\n");
 
 	while ((req = blk_fetch_request(q)) != NULL) {
-		//struct sbull_dev *dev = req->rq_disk->private_data;
 
 		printk ("new request: sector: %lu, bytes %u\n", blk_rq_pos(req), blk_rq_bytes(req));
 
@@ -76,7 +78,23 @@ static void sbull_request(struct request_queue *q)
 			continue;
 		}
 
-		__blk_end_request_cur(req, 0);
+		/* process each segment of each request */
+		rq_for_each_segment(bvec, req, rq_iter) {
+			bio = rq_iter.bio;
+
+			printk("first sector %ld\n", bio->bi_iter.bi_sector + bio->bi_iter.bi_idx);
+			printk("bv_cnt %u\n", bio->bi_vcnt);
+			printk("count %u\n", bio->bi_iter.bi_size);
+			printk("bvec len %u, offset %u\n", bvec.bv_len, bvec.bv_offset);
+
+			if (bio_data_dir(bio)) {
+				printk("writing data\n");
+			} else {
+				printk("reading data\n");
+			}
+		}
+
+		__blk_end_request_all(req, 0);
 	}
 }
 
