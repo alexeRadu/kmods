@@ -22,8 +22,9 @@ static struct attribute *my_attrs[] = {
 static ssize_t my_show(struct kobject *kobj, struct attribute *attr,
 	char *buffer)
 {
+	strcpy(buffer, attr->name);
 	pr_err("my show\n");
-	return 0;
+	return strlen(attr->name);
 }
 
 static ssize_t my_store(struct kobject *kobj, struct attribute *attr,
@@ -60,7 +61,7 @@ static int __init kobj_init(void)
 	memset(&my_obj, 0, sizeof(my_obj));
 	kobject_init(&my_obj, &my_type);
 
-	ret = kobject_add(&my_obj, NULL, "whoooooooo");
+	ret = kobject_add(&my_obj, NULL, "my_obj");
 	if (ret) {
 		pr_err("error initializing object\n");
 		return 1;
